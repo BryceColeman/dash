@@ -1,0 +1,54 @@
+:root {
+--factor: 1;
+}
+.ace-window {
+  background-color: white;
+    height: 500px;
+    margin: 9px 37px;
+}
+.ace-img img {
+  height: 500px;
+}
+
+.ace {
+  height: calc(482px * var(--factor));
+    width: calc(367px * var(--factor));
+    background-color: gray;
+    position: absolute;
+    top: calc(71px * var(--factor));
+    right: 50px;
+}
+
+.torso, .head, .right-leg, .left-leg {
+  background-color: white;
+}
+
+.head {
+  width: calc(150px * var(--factor));
+  height: 125px;
+  margin: 10px auto 0px auto;
+  border-radius: 10px 10px  0px 0px;
+}
+
+.torso {
+  width: 200px;
+  height: 200px;
+  margin: 0 auto;
+  border-radius: 10px;
+}
+
+.right-leg {
+  height: 150px;
+  width: 35px;
+  float: left;
+  position: absolute;
+  left: 214px;
+}
+
+.left-leg {
+  height: 150px;
+  width: 35px;
+  float: left;
+  position: absolute;
+  left: 118px;
+}

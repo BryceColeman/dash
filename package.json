@@ -1,0 +1,32 @@
+{
+  "name": "dash",
+  "version": "1.0.0",
+  "description": "simplifying communication",
+  "main": "app.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dash": "nodemon app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BryceColeman/dash.git"
+  },
+  "keywords": [
+    "communication",
+    "automation"
+  ],
+  "author": "Bryce Coleman",
+  "license": "UNLICENSED",
+  "bugs": {
+    "url": "https://github.com/BryceColeman/dash/issues"
+  },
+  "homepage": "https://github.com/BryceColeman/dash#readme",
+  "dependencies": {
+    "ejs": "^2.6.1",
+    "express": "^4.16.4",
+    "mysql": "^2.16.0",
+    "nodemon": "^1.18.6"
+  }
+}

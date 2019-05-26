@@ -1,0 +1,59 @@
+/* Styling for the templates container and the templates inside*/
+/* Extra small devices (phones, 600px and down) */
+@media only screen and (max-width: 600px) {
+
+}
+
+/* Small devices (portrait tablets and large phones, 600px and up) */
+@media only screen and (min-width: 600px) {
+
+}
+
+/* Medium devices (landscape tablets, 768px and up) */
+@media only screen and (min-width: 768px) {
+
+}
+
+/* Large devices (laptops/desktops, 992px and up) */
+@media only screen and (min-width: 992px) {
+
+}
+
+/* Extra large devices (large laptops and desktops, 1200px and up) */
+@media only screen and (min-width: 1200px) {
+
+}
+
+.template-container {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin: 0% 5%;
+}
+
+.template-container li {
+  width: 350px;
+  height: 350px;
+  margin: 8px;
+  background-color: white;
+  border: 1px solid var(--blue-gray);
+  border-radius: var(--border-radius);
+  list-style-type: none;
+  -webkit-box-shadow: 0px 4px 17px -5px rgba(199,199,199,1);
+  -moz-box-shadow: 0px 4px 17px -5px rgba(199,199,199,1);
+  box-shadow: 0px 4px 17px -5px rgba(199,199,199,1);
+  transition: var(--transition-slow);
+}
+
+.template-container li:hover {
+  -webkit-box-shadow: 0px 10px 17px -5px rgba(199,199,199,1);
+  -moz-box-shadow: 0px 10px 17px -5px rgba(199,199,199,1);
+  box-shadow: 0px 10px 17px -5px rgba(199,199,199,1);
+
+}
+/* End styling for the templates container */

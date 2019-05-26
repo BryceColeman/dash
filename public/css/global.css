@@ -1,0 +1,201 @@
+/* Styling for titles, font, buttons */
+/* Variables */
+:root {
+  /* Fonts */
+  --boogaloo: 'Boogaloo';
+  --roboto: 'Roboto';
+  /* Dimensions */
+  --border-radius: 15px;
+  --bar-length: 100%;
+  --bar-thickness: 45px;
+  /* Colors */
+  --black: #323232;
+  --dark-gray: #6f6f6f;
+  --light-gray: #e6e6e6;
+  --blue-gray: #989ca0;
+  --white: #f2f2f2;
+  /* Timing */
+  --transition-slow: 0.6s;
+  --transition-medium: 0.3s;
+  --transition-fast: 0.2s;
+}
+
+/* End variables */
+/* Global element styles */
+html {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+}
+
+a {
+  text-decoration: none !important;
+}
+
+section {
+  display: -webkit-box;
+  display: -moz-box;
+  display: -ms-flexbox;
+  display: -webkit-flex;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  margin: 0% 5%;
+}
+
+/* End global element styles */
+/* Header styling */
+h1 {
+  font-family: var(--boogaloo);
+  font-size: 100px;
+  margin: 0 auto;
+}
+
+h2, h3, h4, h5, h6 {
+  font-family: var(--roboto);
+  font-weight: 400;
+  word-spacing: 2px;
+  padding: 10px 10px 10px 10px;
+  margin: 0 auto;
+}
+
+h2 {
+  font-size: 30px;
+}
+
+h3 {
+  font-size: 25px;
+  padding-left: 15px;
+}
+
+h4 {
+  font-size: 20px;
+}
+
+h5 {
+  font-size: 15px;
+}
+
+h6 {
+  font-size: 10px;
+}
+
+/* End header styling */
+/* Button styling */
+button {
+  border-radius: var(--border-radius);
+  border: 1px solid var(--black);
+  background-color: white;
+  padding: 7px 20px 7px 20px;
+  margin: 10px;
+  cursor: pointer;
+  text-decoration: none;
+  transition: var(--transition-slow);
+}
+
+/* Default background-color on hover */
+button:hover {
+  background-color: #FF851B;
+}
+
+button:active, button:hover, button:focus {
+  text-decoration: none;
+  outline: none;
+}
+
+/* End button styling. */
+/* Image styling. */
+.main-img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  z-index: -2;
+}
+
+/* End image styling. */
+/* Navigation styling */
+.navigation {
+  margin: 0;
+  padding: 0px 50px;
+  overflow: hidden;
+  height: 100%;
+  z-index: 99;
+  left: 0px;
+  right: 0px;
+}
+
+.navigation li {
+  float: right;
+  text-decoration: none;
+  list-style: none;
+}
+
+.navigation li a {
+  color: var(--white);
+  display: block;
+  font-family: var(--boogaloo);
+  opacity: 1 !important;
+  padding: 0px 25px 13px 25px;
+  text-align: center;
+  z-index: 99;
+  letter-spacing: 1px;
+  font-size: 25px;
+  transition: var(--transition-slow);
+}
+
+.navigation li a:hover {
+  color: var(--black);
+}
+
+#logo a {
+  font-family: var(--boogaloo);
+  padding: 2px 0px 0px 50px;
+  color: var(--white);
+  font-size: 35px;
+  position: absolute;
+  top: 0px;
+}
+
+/* End navigation styling */
+/* Bar box styling */
+.bar {
+  background-color: var(--blue-gray);
+  display: block;
+  position: absolute;
+  z-index: -1;
+  opacity: 0.2;
+}
+
+.bar-top {
+  height: var(--bar-thickness);
+  width: var(--bar-length);
+  top: 0px;
+  left: 0px;
+}
+
+.bar-right {
+  height: var(--bar-length);
+  width: var(--bar-thickness);
+  top: 0px;
+  right: 0px;
+}
+
+.bar-bottom {
+  height: var(--bar-thickness);
+  width: var(--bar-length);
+  bottom: 0px;
+  left: 0px;
+}
+
+.bar-left {
+  height: var(--bar-length);
+  width: var(--bar-thickness);
+  top: 0px;
+  left: 0px;
+}
+
+/* End bar box styling */
