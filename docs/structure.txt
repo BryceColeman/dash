@@ -1,0 +1,57 @@
+./config      - any configuration files (for passport or for database connection)
+./models      - contains all the mongoose models.
+./controllers - functionality for models used in my routers. Controller functions to get the requested data from the models, create an HTML page displaying the data, and return it to the user to view in the browser.
+./routes      - all application routes. "Routes" forward the supported requests (and any information encoded in request URLs) to the appropriate controller functions.
+./views       - presentation files.
+./public      - publicly served files.
+./middleware
+./functions   - personal helpers. 
+
+**Pages**
+Home
+Dash
+Sign-in
+Join
+Learn more
+
+**Components**
+• Ace - Personal robot assistant (CSS) Teaches you how to use Dash. Shows up when no templates are found (suggests adding new ones, has array of funny sayings).
+• Smart search bar with AI to suggest words to type-constantly learning. Tab types word.
+• Templates are created, not added
+• Need feedback form
+• Add template form includes options for greeting, closing, versions. Let users add opening/closing by clicking plus button.
+
+**Membership**
+Free for the first 50 templates
+51-100 $5/month
+101-250 $10/month
+Unlimited $20/month
+
+**Tech Stack**
+Google fonts
+JavaScript
+Node JS
+CSS
+HTML
+My SQL
+Use Stripe for payments - account already created
+Need server space
+
+**Template fields**
+id
+category
+created_by
+created_date
+modified_by
+modified_date
+name
+program
+ranking
+versions
+vetted_status
+visibility
+
+**User fields**
+name
+email
+role
