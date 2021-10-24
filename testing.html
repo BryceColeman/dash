@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.12.0/moment.min.js"></script>
+    <script type="text/javascript" src="https://cdn.kustomerapp.com/card-js/latest/kustomer-card.min.js"></script>
+    <link rel="stylesheet" type="text/css" href="https://cdnapps.kustomerapp.com/kustomer/cards/conversationsentiment/latest/card.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://cdnapps.kustomerapp.com/kustomer/cards/conversationsentiment/latest/genericCard.min.css" />
+    <link rel="stylesheet" type="text/css" class="ui" href="https://cdnjs.cloudflare.com/ajax/libs/semantic-ui/2.1.8/semantic.min.css" />
+    <link rel="stylesheet" type="text/css" class="ui" href="https://cdn.materialdesignicons.com/1.6.50/css/materialdesignicons.min.css" />
+    <script>
+        var debug = false;
+        var isSysAdmin = false;
+        var retrievedOrgList = [];
+        var testJSON;
+
+        function debugMsg(message, data) {
+            if (debug) {
+                if (!data) {
+                    console.log(message);
+                } else {
+                    console.log(message + ' | ' + JSON.stringify(data));
+                }
+            }
+        }
+
+        function checkSysAdmin(contextJSON) {
+            Kustomer.request({
+                url: '/v1/users/current',
+                method: 'get'
+            }, function(err, userProperties) {
+                if (err) {
+                    debugMsg('error fetching current user', { err });
+                    return;
+                }
+                const roles = (userProperties.attributes.roles || []);
+                isSysAdmin = roles.indexOf('system') >= 0 || roles.indexOf('system.admin') >= 0;
+                populateCard(contextJSON);
+            });
+        }
+
+        function generateLoginApiUrl(orgName) {
+            return `https://${orgName}.api.kustomerapp.com/v1/system/impersonation/auth/tokens`;
+        }
+
+        function generateRedirectUrl(orgName) {
+            return `https://${orgName}.kustomerapp.com`;
+        }
+
+        function impersonateUser(orgId, orgName, userId, userName, idx) {
+            Kustomer.request({
+                url: '/v1/system/impersonation',
+                method: 'post',
+                body: {
+                    orgId: orgId,
+                    orgName: orgName,
+                    userId: userId,
+                    userName: userName,
+                },
+            }, function(err, impersonateToken) {
+                if (err) {
+                    debugMsg('Error impersonating user', )
+                    return;
+                }
+
+                const orgName = impersonateToken.attributes.orgName;
+
+                const http = new XMLHttpRequest();
+                http.open('POST', generateLoginApiUrl(orgName));
+                http.withCredentials = true;
+                http.setRequestHeader('Content-Type', 'application/json');
+                http.setRequestHeader('Access-Control-Allow-Headers', '*');
+                http.setRequestHeader('Access-Control-Allow-Origin', '*');
+                http.onreadystatechange = function() {
+                    if (http.readyState === 4 && http.status === 201) {
+                        window.open(generateRedirectUrl(orgName));
+                    } else if (http.readyState === 4) {
+                        debugMsg('impersonate request failed', { status: http.status });
+                        const impersonationDisabledAction = document.getElementById(`${orgId}_${userId}_${idx}`);
+                        if (impersonationDisabledAction) {
+                            impersonationDisabledAction.classList.add('show');
+                            setTimeout(() => {
+                                impersonationDisabledAction.classList.remove('show');
+                            }, 5000)
+                        }
+                    }
+                };
+                http.send(JSON.stringify({ 'token': impersonateToken.id }));
+            });
+        }
+
+        function populateCard(contextJSON) {
+            if (contextJSON.type === 'customer' || contextJSON.type === 'conversation') {
+                getOrgs(contextJSON.customer);
+            } else if (contextJSON.type == 'kobject.orgmembership') {
+                specificOrg(contextJSON);
+            } else {
+                debugMsg(`Context is not customer, conversation, or orgmembership  -  ${contextJSON.type}`);
+                debugMsg(contextJSON);
+            }
+        }
+
+        function getOrgs(customer) {
+            Kustomer.request({
+                url: '/v1/customers/' + customer.id + '/klasses/orgmembership',
+                method: 'get'
+            }, function(err, orgList) {
+                if (err) {
+                    debugMsg('error fetching org memberships', { err });
+                    return;
+                }
+                retrievedOrgList = orgList;
+                displayOrgs(orgList, customer);
+            });
+        }
+
+        function displayOrgs(orgList, customer) {
+            if (orgList && orgList.length > 0) {
+
+                const orgListTable = document.createElement('table');
+                orgListTable.classList.add('cardList');
+
+                const tableBody = document.createElement('tbody');
+                orgListTable.appendChild(tableBody);
+
+                const tableHeader = document.createElement('tr');
+                tableBody.appendChild(tableHeader);
+
+                const columns = ['Org', 'Role', 'Actions'];
+                columns.forEach((column) => {
+                    const colHeader = document.createElement('th');
+                    colHeader.innerHTML = column;
+                    tableHeader.appendChild(colHeader);
+                });
+
+                orgList.reverse().forEach(function(obj, idx) {
+                    
+
+                    // Create cell for actions
+                    const actionsCell = document.createElement('td');
+
+                    const orgId = obj.attributes.custom.orgIdStr;
+                    const orgName = obj.attributes.custom.orgNameStr;
+                    const userId = obj.attributes.custom.userIdStr;
+                    const userName = customer.attributes.displayName;
+                    const userRoles = obj.attributes.custom.roleStr || 'unknown role';
+
+                    // Define + add the action to list other org members
+                    const listMembersAction = document.createElement('a');
+                    listMembersAction.setAttribute('href', '#');
+                    listMembersAction.addEventListener(
+                        'click',
+                        () => retrieveOrgMembers(orgId, orgName, userId, userName),
+                        false
+                    );
+                    listMembersAction.innerHTML = '<i class="mdi mdi-eye"><span class="tooltiptext">List members</span></i>';
+
+                    actionsCell.appendChild(listMembersAction);
+
+                    if (isSysAdmin) {
+                        // Define + add the action to impersonate current user
+                        const impersonationAction = document.createElement('a');
+                        impersonationAction.setAttribute('href', '#');
+                        impersonationAction.addEventListener(
+                            'click',
+                            () => impersonateUser(orgId, orgName, userId, userName, idx),
+                            false
+                        );
+                        impersonationAction.innerHTML = '&nbsp;<i class="mdi mdi-account-key"><span class="tooltiptext">Impersonate User</span></i>';
+
+                        actionsCell.appendChild(impersonationAction);
+
+                        // Define + add the disabled icon
+                        const impersonationDisabledAction = document.createElement('span');
+                        impersonationDisabledAction.classList.add('impersonationDisabledAction');
+                        impersonationDisabledAction.setAttribute('id', `${orgId}_${userId}_${idx}`);
+                        impersonationDisabledAction.innerHTML = '&nbsp;<i class="mdi mdi-block-helper red"><span class="tooltiptext">Impersonation Disabled</span></i>';
+
+                        actionsCell.appendChild(impersonationDisabledAction);
+                    };
+
+
+                    const orgNameCell = document.createElement('td');
+                    orgNameCell.classList.add('orgList');
+                    orgNameCell.addEventListener(
+                        'click',
+                        () => retrieveOrgMembers(orgId, orgName, userId, userName),
+                        false
+                    );
+                    orgNameCell.innerHTML = `<span>${orgName}</span>`;
+
+                    const rolesCell = document.createElement('td');
+                    rolesCell.classList.add('roleDesc');
+                    rolesCell.innerHTML = `<span>${userRoles}</span>`;
+
+                    // Add All Cells to Row
+                    const tableRow = document.createElement('tr');
+                    tableRow.classList.add('summaryRow');
+                    tableRow.appendChild(orgNameCell);
+                    tableRow.appendChild(rolesCell);
+                    tableRow.appendChild(actionsCell);
+
+                    // Add Row to Table Body
+                    tableBody.appendChild(tableRow);
+                });
+
+                const orgListHTML = document.createElement('div');
+                orgListHTML.id = 'cardSummary';
+                orgListHTML.classList.add('customerSummary');
+                orgListHTML.appendChild(orgListTable);
+                populateHtml(orgListHTML);
+            } else {
+                const noOrgsHTML = document.createElement('div');
+                noOrgsHTML.classList.add('ui');
+                noOrgsHTML.classList.add('cardHeader');
+                noOrgsHTML.classList.add('noOrders');
+                noOrgsHTML.innerHTML = 'No memberships found.'
+                populateHtml(noOrgsHTML);
+            }
+        }
+
+
+        function specificOrg(contextJSON) {
+            const customAttrs = contextJSON["kobject.orgmembership"].attributes.custom;
+            const customerName = contextJSON.customer.attributes.name;
+            retrieveOrgMembers(
+                customAttrs.orgIdStr,
+                customAttrs.orgNameStr,
+                customAttrs.userIdStr,
+                customerName,
+            );
+        }
+
+        function retrieveOrgMembers(orgId, orgName, userId, userName) {
+            Kustomer.request({
+                url: '/v1/customers/search',
+                method: 'post',
+                body: {
+                    "and": [{
+                        "kobject_custom_orgmembership_orgIdStr": {
+                            "equals": orgId
+                        }
+                    }]
+                }
+            }, function(err, employees) {
+                if (err) {
+                    debugMsg('Error fetching customers w/ org memberships', { err });
+                    return;
+                }
+
+                if (employees.length > 0) {
+                    document.getElementById("company_card_header").innerHTML = "<i class='mdi mdi-domain'></i>&nbsp;" + orgName;
+                    const metaDiv = document.getElementById("company_card_meta");
+
+                    const agentCountSpan = document.createElement('span');
+                    agentCountSpan.innerHTML = `${employees.length} Agents`;
+                    metaDiv.appendChild(agentCountSpan);
+
+                    if (isSysAdmin) {
+                        const impersonationLink = document.createElement('a');
+                        impersonationLink.setAttribute('style', 'float:right;');
+                        impersonationLink.setAttribute('href', '#');
+                        impersonationLink.addEventListener(
+                            'click',
+                            () => impersonateUser(orgId, orgName, userId, userName),
+                            false,
+                        );
+                        impersonationLink.innerHTML = 'Impersonate';
+                        metaDiv.appendChild(impersonationLink);
+                    }
+
+                    const userListTable = document.createElement('table');
+                    const headerRow = document.createElement('tr');
+                    userListTable.appendChild(headerRow);
+                    const columns = ['User', 'Role', 'Conv'];
+                    columns.forEach(column => {
+                        const headerCell = document.createElement('th');
+                        headerCell.innerHTML = column;
+                        headerRow.appendChild(headerCell);
+                    });
+
+                    employees.forEach(function(employee) {
+                        const userRow = document.createElement('tr');
+                        userRow.classList.add('summaryRow');
+                        userListTable.appendChild(userRow);
+
+                        const userCell = document.createElement('td');
+                        userCell.classList.add('userList');
+
+                        const userLink = document.createElement('a');
+                        userLink.classList.add('employeeName')
+                        userLink.setAttribute('target', '_top');
+                        userLink.setAttribute('href', `${Kustomer._targetOrigin}/app/customers/${employee.id}`);
+                        userLink.innerHTML = `<i class="mdi mdi-account-box-outline"></i>&nbsp;${employee.attributes.displayName}`;
+                        userCell.appendChild(userLink);
+
+                        const roleDataCell = document.createElement('td');
+                        roleDataCell.classList.add('roleDesc');
+                        roleDataCell.innerHTML = '<!--No role data yet-->';
+
+                        const convoCell = document.createElement('td');
+                        convoCell.classList.add('convoCount');
+
+                        userRow.appendChild(userCell);
+                        userRow.appendChild(roleDataCell);
+                        userRow.appendChild(convoCell);
+
+                        const conversationCounts = employee.attributes.conversationCounts;
+                        if (conversationCounts.open > 0) {
+                            const openConvo = document.createElement('span');
+                            openConvo.classList.add('convo_count');
+                            openConvo.classList.add('open_convo');
+                            openConvo.classList.add('red');
+                            openConvo.innerHTML = `${conversationCounts.open}&nbsp;`;
+                            convoCell.appendChild(openConvo);
+                        }
+
+                        if (conversationCounts.snoozed > 0) {
+                            const snoozeConvo = document.createElement('span');
+                            snoozeConvo.classList.add('convo_count');
+                            snoozeConvo.classList.add('snoozed_convo');
+                            snoozeConvo.classList.add('orange');
+                            snoozeConvo.innerHTML = `${conversationCounts.snoozed}&nbsp;`;
+                            convoCell.appendChild(snoozeConvo);
+                        }
+
+                        if (conversationCounts.done > 0) {
+                            const doneConvo = document.createElement('span');
+                            doneConvo.classList.add('convo_count');
+                            doneConvo.classList.add('done_convo');
+                            doneConvo.classList.add('green');
+                            doneConvo.innerHTML = `${conversationCounts.done}&nbsp;`;
+                            convoCell.appendChild(doneConvo);
+                        }
+                    });
+
+                    populateHtml(userListTable);
+                } else {
+                    debugMsg('no additional employees');
+                    Kustomer.close();
+                }
+            });
+        }
+
+        function populateHtml(element) {
+            const node = document.getElementById("company_employee_container");
+            while (node.lastElementChild) {
+                node.removeChild(node.lastElementChild);
+            }
+            node.append(element);
+        }
+
+        document.addEventListener("DOMContentLoaded", function(event) {
+            try {
+                Kustomer.initialize(function(data) {
+                    debugMsg(data);
+                    testJSON = data;
+
+                    checkSysAdmin(data);
+                });
+            } catch (e) {
+                console.log(e);
+                var testData = {
+                    "data": {
+                        "customer": {
+                            "attributes": {
+                                "emails": [{
+                                    "email": "test@test.com"
+                                }]
+                            }
+                        }
+                    }
+                };
+                checkSysAdmin(testData);
+            }
+        });
+    </script>
+    <!--CSS applies whenever elements are added.  '^=' means "begins with" -->
+    <style>
+        #container {
+            max-height: 256px;
+            white-space: nowrap;
+            overflow-x: hidden;
+            padding: 8px;
+            margin: 10px;
+        }
+
+        .ui.card.mainCard {
+            height: 100%;
+        }
+
+        .ui.header.cardHeader {
+            height: 100%;
+            color: rgba(0, 0, 0, .64)!important;
+            font-size: 1em;
+            text-overflow: ellipsis;
+            font-weight: 400;
+            margin: 0;
+        }
+
+        .headerContent {
+            min-height: 50px;
+        }
+
+        .bodyContent {
+            min-height: 206px;
+            height: 100%;
+            overflow-y: auto;
+        }
+
+        .hr {
+            background-color: rgba(0, 0, 0, .06);
+            border-color: rgba(0, 0, 0, .06);
+            border-top: 1px solid rgba(0, 0, 0, .06);
+        }
+
+        .employeeName {
+            font-size: 14px;
+            display: inline-block;
+            color: rgba(0, 0, 0, .64);
+            max-width: 180px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .convoTitle {
+            display: inline-block;
+            max-width: 160px;
+            text-indent: -12px;
+            margin-left: 12px;
+        }
+
+        .convo_overflow {
+            display: inline-block;
+            max-width: 160px;
+            margin-left: 12px;
+        }
+
+        .orange {
+            color: orange;
+        }
+
+        .red {
+            color: #e54c3c;
+        }
+
+        .green {
+            color: #0ac775;
+        }
+
+        .employee_summary span {
+            float: right;
+        }
+
+        .timeStamp {
+            opacity: 0.3;
+        }
+
+        .impersonationDisabledAction {
+            opacity: 0;
+            transition: all 500ms ease-out;
+        }
+
+        .show {
+            opacity: 1;
+            transition: all 500ms ease-in;
+        }
+
+        .convoTitle:before,
+        .convo_count:before {
+            font: normal normal normal 12px/1 "Material Design Icons";
+            font-size: inherit;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transform: translate(0, 0);
+        }
+
+        .convoStatus_open:before,
+        .open_convo:before {
+            content: "\F5D6";
+            color: #e54c3c;
+        }
+
+        .convoStatus_done:before,
+        .done_convo:before {
+            content: "\F12C";
+            color: #0ac775;
+        }
+
+        .convoStatus_snoozed:before,
+        .snoozed_convo:before {
+            content: "\F020";
+            color: orange;
+        }
+
+         ::-webkit-scrollbar {
+            width: 5px;
+            height: 5px;
+        }
+
+         ::-webkit-scrollbar-thumb {
+            padding: 2px 0;
+            background: #C1C1C1;
+            border-radius: 5px;
+            border: 1px solid white;
+        }
+
+         ::-webkit-scrollbar-track {
+            padding: 2px 0;
+            background: darken(#C1C1C1, 10%);
+            border-radius: 5px;
+            border: 1px solid white;
+        }
+
+        .mdi .tooltiptext {
+            visibility: hidden;
+            text-transform: capitalize;
+            font-family: 'Roboto', helvetica, sans-serif;
+            background-color: #727272;
+            font-size: 12px;
+            color: #fff;
+            text-align: center;
+            border-radius: 2px;
+            padding: 4px 10px;
+            position: absolute;
+            z-index: 1;
+            top: -25px;
+            white-space: nowrap;
+            right: -100%;
+        }
+
+        .mdi:hover .tooltiptext {
+            visibility: visible;
+        }
+
+        .userList {
+            min-width: 130px;
+        }
+
+        .userList a {
+            text-overflow: ellipsis;
+            width: 130px;
+        }
+        .roleDesc {
+            min-width: 50px;
+        }
+
+        .roleDesc a {
+            text-overflow: ellipsis;
+            width: 50px;
+        }
+
+        .orgList {
+            min-width: 100px;
+            max-width: 100px;
+        }
+
+        .orgList span {
+            text-overflow: ellipsis;
+            width: 100px;
+            padding-right: 15px;
+        }
+
+        .roleDesc span {
+            text-overflow: ellipsis;
+            width: 50px;
+        }
+
+        .convoCount {
+            padding: 0px;
+            text-align: right;
+        }
+        th {
+    text-align: left;
+}
+    </style>
+
+
+
+</head>
+
+
+
+<body>
+
+    <!-- creates block element (div) w/ id "array" -->
+
+
+    <div class="ui card mainCard">
+        <div class="content headerContent">
+            <div id="company_card_header" class="ui header cardHeader">
+                <i class='mdi mdi-domain'></i> Org Memberships
+            </div>
+            <div id="company_card_meta" class="ui meta">
+            </div>
+        </div>
+        <div class="content bodyContent">
+            <div id="company_employee_container" class="">
+            </div>
+        </div>
+    </div>
+</body>
+
+</html>
